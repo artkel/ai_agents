@@ -4,8 +4,11 @@ import pandas as pd
 import openai
 from llama_index.llms.openai import OpenAI
 from llama_index.experimental.query_engine import PandasQueryEngine
-# from llama_index.core.query_engine import PandasQueryEngine
-from prompts import new_prompt, instruction_str
+from llama_index.core.tools import QueryEngineTool, ToolMetadata
+from llama_index.core.agent import ReActAgent
+from note_engine import note_engine
+from prompts import new_prompt, instruction_str, context
+
 
 load_dotenv()
 
@@ -22,9 +25,20 @@ population_query_engine = PandasQueryEngine(
                                 instruction_str=instruction_str,
                                 llm=llm)
 
-#population_query_engine.update_prompts({"pandas_prompt": new_prompt})
-population_query_engine.query("Compare population in Australia in 2023 and 2024")
+population_query_engine.update_prompts({"pandas_prompt": new_prompt})
 
+# specify various tools we have an access to
+tools = [
+    note_engine,
+    QueryEngineTool(
+        query_engine=population_query_engine,
+        metadata=ToolMetadata(
+            name="population_data",
+            description="this tool provides information about the world population & demographics"
+        )
+    )
+]
 
+agent = ReActAgent.from_tools(tools, llm=llm, verbose=True, context=context)
 
 
