@@ -2,8 +2,11 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain_community.tools import Tool
 from langchain.agents import initialize_agent, AgentType
 import json
+import os
 from langchain_community.tools import DuckDuckGoSearchRun
+import datetime
 
+# to read data from json files
 def load_user_data():
     with open("data/user_data.json", "r", encoding="utf-8") as file:
         return json.load(file)
@@ -11,26 +14,53 @@ def load_user_data():
 def load_product_data():
     with open("data/product_data.json", "r", encoding="utf-8") as file:
         return json.load(file)
+    
+# Logging function
+log_path = os.path.join("data", "log.txt")
 
+# Logging function
+
+def log_interaction(query, tool_used, response):
+    if not os.path.exists(log_path):
+        open(log_path, "w")
+
+    with open(log_path, "a", encoding="utf-8") as f:
+        f.write(f"{datetime.datetime.now()} | Query: {query} | Response: {response}\n")
+
+    return "log saved"
+
+
+# User search function
 def find_user(name: str):
     data = load_user_data()
     for user in data["users"]:
         if user["name"].lower() == name.lower():
-            return user
-    return "user not found in database"
+            response = user
+            log_interaction(name, "User_Database", response)
+            return response
+    response = "User not found"
+    log_interaction(name, "User_Database", response)
+    return response
 
+# Product search function
 def find_product(product_name: str):
     data = load_product_data()
     for product in data["products"]:
         if product["name"].lower() == product_name.lower():
-            return product
-    return "product not found in database"
+            response = product
+            log_interaction(product_name, "Product_Database", response)
+            return response
+    response = "Product not found"
+    log_interaction(product_name, "Product_Database", response)
+    return response
 
 # websearch tool 
 search_tool = DuckDuckGoSearchRun()
 
 def search_query(query: str):
-    return search_tool.invoke(query)
+    response = search_tool.invoke(query)
+    log_interaction(query, "Web_Search", response)
+    return response
 
 
 # define tools for agent
@@ -77,6 +107,7 @@ agent = initialize_agent(
 test_prompt_1 = "Find all information about user Alice"
 test_prompt_2 = "How much does Office Chair Ergonomic cost?"
 test_prompt_3 = "What are approx casualties of Japan in WW2?"
+test_prompt_4 = "How old Bob is? And where does he live?"
 
 response = agent.invoke(test_prompt_3)
 print(response)
