@@ -1,20 +1,10 @@
 import os
 import json
 from langchain_community.tools import Tool
-
-from langchain_community.document_loaders import JSONLoader
 from langchain_community.agent_toolkits import JsonToolkit, create_json_agent
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.tools.json.tool import JsonSpec
 
-
-
-# Load product data using JSONLoader
-# product_data_loader = JSONLoader(
-#     file_path="data/product_data.json",
-#     jq_schema=".products[]",  
-#     text_content=False
-# )
 
 # Load the raw JSON data
 with open("data/product_data.json", 'r') as file:
