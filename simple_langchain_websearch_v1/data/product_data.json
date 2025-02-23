@@ -1,9 +1,39 @@
 {
-    "products": [
-      { "id": 1, "name": "Laptop Pro 15", "category": "Electronics", "price": 1299.99, "stock": 15 },
-      { "id": 2, "name": "Wireless Headphones X", "category": "Electronics", "price": 199.99, "stock": 30 },
-      { "id": 3, "name": "Running Shoes Max", "category": "Sportswear", "price": 89.99, "stock": 50 },
-      { "id": 4, "name": "Smartwatch 5", "category": "Wearable", "price": 249.99, "stock": 20 },
-      { "id": 5, "name": "Office Chair Ergonomic", "category": "Furniture", "price": 179.99, "stock": 10 }
-    ]
-  }
+  "products": [
+    {
+      "id": 1,
+      "name": "Laptop Pro 15",
+      "category": "Electronics",
+      "price": 1299.99,
+      "stock": 15
+    },
+    {
+      "id": 2,
+      "name": "Wireless Headphones X",
+      "category": "Electronics",
+      "price": 199.99,
+      "stock": 30
+    },
+    {
+      "id": 3,
+      "name": "Running Shoes Max",
+      "category": "Sportswear",
+      "price": 89.99,
+      "stock": 50
+    },
+    {
+      "id": 4,
+      "name": "Smartwatch 5",
+      "category": "Wearable",
+      "price": 249.99,
+      "stock": 20
+    },
+    {
+      "id": 5,
+      "name": "Office Chair Ergonomic",
+      "category": "Furniture",
+      "price": 179.99,
+      "stock": 10
+    }
+  ]
+}

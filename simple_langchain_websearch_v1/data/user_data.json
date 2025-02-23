@@ -4,6 +4,8 @@
       {"name": "Bob", "age": 25, "city": "Hamburg"},
       {"name": "Robert", "age": 47, "city": "Ulm"},
       {"name": "Sarah", "age": 41, "city": "Aachen"},
-      {"name": "Marcus", "age": 21, "city": "Dortmund"}
+      {"name": "Marcus", "age": 21, "city": "Dortmund"},
+      {"name": "Michelle", "age": 19, "city": "Lille"},
+      {"name": "Teodor", "age": 29, "city": "Hamburg"}
     ]
   }
