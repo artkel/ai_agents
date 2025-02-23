@@ -21,16 +21,17 @@ agent = initialize_agent(
 )
 
 # test
-test_prompt_1 = "Find all information about user Alice. Use logging tool to save logs!"
-test_prompt_2 = "How much does Office Chair Ergonomic cost? Use logging tool to save logs!"
-test_prompt_3 = "What are approx casualties of Japan in WW2? Use logging tool to save logs!"
-test_prompt_4 = "How old Bob is? And where does he live? Use logging tool to save logs!"
-test_prompt_5 = "Which product is the most expensive? Use logging tool to save logs!"
-test_prompt_6 = "Who is the oldest user from hamburg in our database? Use logging tool to save logs!"
-test_prompt_7 = "Give me all products that are 200 or cheaper. Use logging tool to save logs!"
+test_prompt_1 = "Find all available information about the user named Alice. Use the logging tool to save logs."
+test_prompt_2 = "What is the price of the Office Chair Ergonomic? Use the logging tool to save logs."
+test_prompt_3 = "What were the approximate casualties in Japan during World War II? Use the logging tool to save logs."
+test_prompt_4 = "How old is Bob and where does he live? Use the logging tool to save logs."
+test_prompt_5 = "Which product is the most expensive in our database? Use the logging tool to save logs."
+test_prompt_6 = "Who is the oldest user from Hamburg in our database? Use the logging tool to save logs."
+test_prompt_7 = "List all products that cost $200 or less. Use the logging tool to save logs."
+test_prompt_8 = "Who was the President of the United States during the reign of Emperor Alexander I of Russia (early 19th century)? Use the logging tool to save logs."
 
 
-response = agent.invoke(test_prompt_6)
+response = agent.invoke(test_prompt_8)
 print(response)
 
 
