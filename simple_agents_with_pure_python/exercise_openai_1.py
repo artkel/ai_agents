@@ -59,7 +59,7 @@ def call_function(name, args):
 for tool_call in completion_1.choices[0].message.tool_calls:
     name = tool_call.function.name
     args = json.loads(tool_call.function.arguments)
-    messages.append(completion_1.choices[0].message) # memory - storing all user's and agent's messages
+    messages.append(completion_1.choices[0].message) # add the tool's output to message variable
 
     result = call_function(name, args)
     messages.append(
