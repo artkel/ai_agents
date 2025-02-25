@@ -1,10 +1,12 @@
 import os
 import json
 import requests
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from openai import OpenAI, pydantic_function_tool
 
-client = OpenAI(api_key="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")
+load_dotenv()
+client = OpenAI()
 
 # define data model
 class GetWeather(BaseModel):
@@ -12,6 +14,7 @@ class GetWeather(BaseModel):
         ...,
         description="City and country e.g. Bogotá, Colombia"
     )
+
 
 
 # Step 1: Define get_weather tool and get the schema with pydantic_function_tool

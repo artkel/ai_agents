@@ -1,10 +1,12 @@
 import os
 import json
 import requests
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from openai import OpenAI
 
-client = OpenAI(api_key="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")
+load_dotenv()
+client = OpenAI()
 
 # Step 0: define get_weather tool
 def get_weather(latitude, longitude):
