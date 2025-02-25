@@ -37,7 +37,7 @@ tools = [{
 system_prompt = "You are a helpful weather assistant."
 messages = [
     {"role": "system", "content": system_prompt},
-    {"role": "user", "content": "What's the weather like in Bogota today?"}
+    {"role": "user", "content": "What's the weather like in Vagator, Goa today?"}
 ]
 
 # Step 3: Call model with get_weather tool defined
@@ -70,8 +70,8 @@ print(result)
 
 # Step 6: Supply result and call model again
 class WeatherResponse(BaseModel): # provide data model for response structure consistency
-    temperature: float = Field(description="The current temperature in celsius for the given location.")
-    response: str = Field(description="A natural language response to the user's question.")
+    temperature: int = Field(description="The current temperature in celsius for the given location.")
+    response: str = Field(description="A natural language response in Russian to the user's question.")
 
 completion_2 = client.beta.chat.completions.parse(
     model="gpt-4o",
