@@ -20,7 +20,7 @@ def calculator(operation, operand1, operand2):
     else:
         raise ValueError(f"Unsupported operation: {operation}")
 
-# OpenAI tool structure:
+# Claude tool structure:
 calculator_tool = {
     "name": "calculator",
     "description": "Simple calculator that performs basic arithmetic operations [such as add, subtract, multiply, divide] with two operands (operand1 & operand2)",
