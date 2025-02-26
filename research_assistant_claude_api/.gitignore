@@ -1,0 +1,6 @@
+env/
+.env
+.vscode
+ai/
+__pycache__/
+response.pkl
