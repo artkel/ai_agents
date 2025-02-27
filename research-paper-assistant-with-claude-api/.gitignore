@@ -1,7 +1,41 @@
-env/
+# Environment variables
 .env
-.vscode
-ai/
+
+# Python virtual environment
+venv/
+env/
+.venv/
+.python-version
+
+# Python bytecode
 __pycache__/
-germany/
-config.py
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Data and models
+data/
+embeddings/
+*.pdf
+*.faiss
+*.pkl
+
+# Flask
+instance/
+.webassets-cache
+
+# Editor/IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+logs/
