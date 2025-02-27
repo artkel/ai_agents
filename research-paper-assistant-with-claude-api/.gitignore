@@ -1,0 +1,7 @@
+env/
+.env
+.vscode
+ai/
+__pycache__/
+germany/
+config.py
