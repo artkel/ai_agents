@@ -42,6 +42,14 @@ A web-based tool for processing, searching, and summarizing academic papers usin
    OPENAI_API_KEY=your_openai_key
    ```
 
+## Configuration
+
+The project uses a configuration file for API keys:
+
+1. Copy the example configuration file:
+   ```bash
+   cp config.example.py config.py
+
 ## Usage
 
 1. Start the application:
