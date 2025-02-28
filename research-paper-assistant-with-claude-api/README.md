@@ -13,7 +13,7 @@ A web-based tool for processing, searching, and summarizing academic papers usin
 
 - **Backend**: Python, Flask
 - **Embeddings**: OpenAI API (text-embedding-3-small)
-- **Summarization**: Anthropic Claude API (claude-3-haiku-20240307)
+- **Summarization**: Anthropic Claude API ()
 - **Vector Database**: FAISS for efficient similarity search
 - **Frontend**: HTML, Bootstrap, JavaScript
 
