@@ -40,7 +40,8 @@ prompt = """Search for the latest fashion trends for women in 2025. For each of 
 2) OUTFIT IDEAS: Three specific outfit combinations that incorporate this trend
 3) SHOPPING IDEAS: Where to find these items (mention both specific retailers and types of stores)
 
-Format your response with clear headings for each trend and numbered lists for outfit ideas. Keep the information concise and actionable."""
+Format your response with clear headings for each trend and numbered lists for outfit ideas. Keep the information concise and actionable.
+Translate your response in Russian language."""
 
 response = agent.run(
     prompt

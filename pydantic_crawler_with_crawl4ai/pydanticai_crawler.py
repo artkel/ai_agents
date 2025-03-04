@@ -5,6 +5,7 @@ import asyncio
 import requests
 from xml.etree import ElementTree
 from urllib.parse import urlparse
+import re
 
 __location__ = os.path.dirname(os.path.abspath(__file__))
 __output__ = os.path.join(__location__, "output")
@@ -20,28 +21,30 @@ from typing import List, Dict
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 
 
-def get_filename_from_url(url: str) -> str:
-    """Generate a valid filename from a URL."""
+def get_readable_title_from_url(url: str) -> str:
+    """Generate a readable title from a URL."""
     parsed = urlparse(url)
     # Remove the domain and use the path
     path = parsed.path.strip('/')
 
-    # Replace forward slashes with underscores
-    path = path.replace('/', '_')
-
-    # If the path is empty (e.g., for domain.com/), use 'index'
     if not path:
-        path = 'index'
+        return "Home"
 
-    # If the path doesn't end with .md, add it
-    if not path.endswith('.md'):
-        path += '.md'
+    # Split by slashes and get the last part
+    parts = path.split('/')
+    title = parts[-1]
 
-    return path
+    # Replace hyphens and underscores with spaces
+    title = title.replace('-', ' ').replace('_', ' ')
+
+    # Capitalize words
+    title = ' '.join(word.capitalize() for word in title.split())
+
+    return title
 
 
-async def crawl_parallel(urls: List[str], max_concurrent: int = 3) -> Dict[str, str]:
-    print("\n=== Parallel Crawling with Browser Reuse + Memory Check ===")
+async def crawl_and_save_to_single_file(urls: List[str], output_file: str, max_concurrent: int = 3) -> bool:
+    print(f"\n=== Crawling Pydantic AI Documentation to {output_file} ===")
 
     # We'll keep track of peak memory usage across all tasks
     peak_memory = 0
@@ -104,22 +107,14 @@ async def crawl_parallel(urls: List[str], max_concurrent: int = 3) -> Dict[str, 
                     markdown_content = result.markdown
 
                     if markdown_content:
-                        # Add URL as title at the beginning of the markdown if not already present
-                        title_md = f"# {url}\n\n"
-                        if not markdown_content.startswith(f"# {url}"):
-                            markdown_content = title_md + markdown_content
+                        # Get a readable title for the section
+                        title = get_readable_title_from_url(url)
 
-                        # Store in our dictionary
-                        crawled_content[url] = markdown_content
-
-                        # Save individual files
-                        filename = get_filename_from_url(url)
-                        file_path = os.path.join(__output__, filename)
-
-                        with open(file_path, 'w', encoding='utf-8') as f:
-                            f.write(markdown_content)
-
-                        print(f"Saved markdown for {url} to {file_path}")
+                        # Store in our dictionary with title and URL info
+                        crawled_content[url] = {
+                            'title': title,
+                            'content': markdown_content
+                        }
                     else:
                         print(f"No markdown content for {url}")
                 else:
@@ -130,27 +125,67 @@ async def crawl_parallel(urls: List[str], max_concurrent: int = 3) -> Dict[str, 
         print(f"  - Successfully crawled: {success_count}")
         print(f"  - Failed: {fail_count}")
 
+        # Sort URLs by path depth (top-level pages first)
+        sorted_urls = sorted(crawled_content.keys(),
+                             key=lambda url: (len(urlparse(url).path.split('/')), url))
+
         # Save all content to a single markdown file
-        combined_markdown_path = os.path.join(__output__, "pydantic_docs_combined.md")
-        with open(combined_markdown_path, 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             f.write("# Pydantic AI Documentation\n\n")
-            f.write("This file contains the combined documentation crawled from the Pydantic website.\n\n")
+            f.write("This file contains the combined documentation crawled from the Pydantic AI website.\n\n")
 
             # Add a table of contents
             f.write("## Table of Contents\n\n")
-            for url in crawled_content.keys():
-                f.write(f"- [{url}](#{urlparse(url).path.replace('/', '-')})\n")
+
+            # Track sections for multi-level TOC
+            current_section = None
+
+            for url in sorted_urls:
+                parsed = urlparse(url)
+                path_parts = parsed.path.strip('/').split('/')
+
+                title = crawled_content[url]['title']
+                anchor = re.sub(r'[^a-zA-Z0-9_-]', '', title.lower().replace(' ', '-'))
+
+                # Handle multi-level TOC for better organization
+                if len(path_parts) == 0 or path_parts[0] == '':
+                    # Home page
+                    f.write(f"- [Home](#{anchor})\n")
+                    current_section = None
+                elif len(path_parts) == 1:
+                    # Top-level section
+                    f.write(f"- [{title}](#{anchor})\n")
+                    current_section = path_parts[0]
+                else:
+                    # Nested section
+                    indent = "  " * (len(path_parts) - 1)
+                    f.write(f"{indent}- [{title}](#{anchor})\n")
 
             f.write("\n---\n\n")
 
             # Write all the content
-            for url, content in crawled_content.items():
-                f.write(f"<a id='{urlparse(url).path.replace('/', '-')}'></a>\n\n")
+            for url in sorted_urls:
+                title = crawled_content[url]['title']
+                content = crawled_content[url]['content']
+
+                # Create an anchor ID for linking
+                anchor = re.sub(r'[^a-zA-Z0-9_-]', '', title.lower().replace(' ', '-'))
+
+                f.write(f"<a id='{anchor}'></a>\n\n")
+                f.write(f"## {title}\n\n")
+                f.write(f"*Source: [{url}]({url})*\n\n")
+
+                # Clean up and add the content
+                # Remove the title if it already exists in the content
+                title_pattern = re.compile(r'^# .*\n', re.MULTILINE)
+                if title_pattern.match(content):
+                    content = title_pattern.sub('', content, 1)
+
                 f.write(content)
                 f.write("\n\n---\n\n")
 
-        print(f"\nCombined markdown saved to {combined_markdown_path}")
-        return crawled_content
+        print(f"\nDocumentation saved to {output_file}")
+        return True
 
     finally:
         print("\nClosing crawler...")
@@ -163,12 +198,12 @@ async def crawl_parallel(urls: List[str], max_concurrent: int = 3) -> Dict[str, 
 def get_pydantic_ai_docs_urls():
     """
     Fetches all URLs from the Pydantic AI documentation.
-    Uses the sitemap (https://docs.pydantic.dev/latest/sitemap.xml ) to get these URLs.
+    Uses the sitemap (https://ai.pydantic.dev/sitemap.xml) to get these URLs.
 
     Returns:
         List[str]: List of URLs
     """
-    sitemap_url = "https://docs.pydantic.dev/latest/sitemap.xml"
+    sitemap_url = "https://ai.pydantic.dev/sitemap.xml"
     try:
         response = requests.get(sitemap_url)
         response.raise_for_status()
@@ -188,10 +223,13 @@ def get_pydantic_ai_docs_urls():
 
 
 async def main():
+    # Define the output file path
+    output_file = "pydanticai_documentation.md"
+
     urls = get_pydantic_ai_docs_urls()
     if urls:
         print(f"Found {len(urls)} URLs to crawl")
-        await crawl_parallel(urls, max_concurrent=10)
+        await crawl_and_save_to_single_file(urls, output_file, max_concurrent=10)
     else:
         print("No URLs found to crawl")
 

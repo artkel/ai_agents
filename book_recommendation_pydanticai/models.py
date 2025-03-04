@@ -1,3 +1,5 @@
+# ============================
+# models.py
 from enum import Enum
 from typing import List, Optional, Set
 from pydantic import BaseModel, Field
@@ -6,17 +8,29 @@ from typing_extensions import TypedDict
 # define enums for consistent categorization
 class Genre(str, Enum):
     """Book genres as an enumeration for consistent categorization."""
+    FICTION = "fiction"
     SCIENCE_FICTION = "science fiction"
     FANTASY = "fantasy"
     MYSTERY = "mystery"
     THRILLER = "thriller"
     ROMANCE = "romance"
-    HISTORICAL = "historical"
-    BIOGRAPHY = "biography"
+    HISTORICAL = "historical fiction"
+    HISTORY = "history"
+    BIOGRAPHY = "biography & autobiography"
     NON_FICTION = "non-fiction"
     HORROR = "horror"
-    YOUNG_ADULT = "young adult"
+    YOUNG_ADULT = "young adult fiction"
+    JUVENILE = "juvenile fiction"
     LITERARY = "literary fiction"
+    CLASSICS = "classics"
+    POETRY = "poetry"
+    DRAMA = "drama"
+    PHILOSOPHY = "philosophy"
+    SCIENCE = "science"
+    BUSINESS = "business & economics"
+    TRAVEL = "travel"
+    TRUE_CRIME = "true crime"
+    COMICS = "comics & graphic novels"
 
 class Theme(str, Enum):
     """Common book themes for consistent categorization."""
