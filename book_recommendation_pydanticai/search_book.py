@@ -35,6 +35,12 @@ def main():
         print(f"Themes: {', '.join(str(theme) for theme in book.themes)}")
         print(f"Mood: {', '.join(str(mood) for mood in book.mood)}")
 
+        # Display rating information
+        if book.avg_rating is not None:
+            print(f"Average Rating: {book.avg_rating}/5 (from {book.ratings_count or 'unknown number of'} ratings)")
+        else:
+            print("Average Rating: Not available")
+
         # Print description (truncated if too long)
         if book.description:
             desc = book.description
@@ -52,7 +58,8 @@ def main():
             all_books = book_repo.get_all_books()
             print(f"\nRepository now contains {len(all_books)} books:")
             for i, b in enumerate(all_books, 1):
-                print(f"{i}. {b.title} by {b.author}")
+                rating_info = f" ({b.avg_rating}/5)" if b.avg_rating is not None else ""
+                print(f"{i}. {b.title} by {b.author}{rating_info}")
 
         # Save full details to a JSON file option
         save_json = input("\nSave full details to JSON file? (y/n): ").lower()

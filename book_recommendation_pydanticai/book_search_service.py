@@ -1,4 +1,4 @@
-# book_search_service.py (updated with Google Books API)
+# book_search_service.py (updated with Google Books API and rating information)
 import os
 import re
 from typing import List, Optional
@@ -25,7 +25,7 @@ class BookSearchService:
 
         # Create an OpenAI model with the API key
         openai_model = OpenAIModel(
-            "gpt-4o", #"gpt-3.5-turbo-0125",
+            "gpt-4o",  # "gpt-3.5-turbo-0125",
             api_key=api_key
         )
 
@@ -36,7 +36,7 @@ class BookSearchService:
             system_prompt=(
                 "You are a book information extraction specialist. Your task is to extract structured "
                 "information about books from the provided details. Focus on determining accurate "
-                "genres, themes, and emotional tone/mood.\n\n"
+                "genres, themes, emotional tone/mood, and including any provided rating data.\n\n"
 
                 "For genres, use only these categories: science fiction, fantasy, mystery, thriller, "
                 "romance, historical, biography, non-fiction, horror, young adult, literary fiction.\n\n"
@@ -45,7 +45,9 @@ class BookSearchService:
                 "loss, power, identity, good vs evil, friendship.\n\n"
 
                 "For mood, identify emotional tones like: uplifting, dark, humorous, thoughtful, "
-                "suspenseful, romantic, melancholic, inspiring."
+                "suspenseful, romantic, melancholic, inspiring.\n\n"
+
+                "Also include average rating (0-5 scale) and ratings count when available from Google Books data."
             )
         )
 
@@ -80,10 +82,10 @@ class BookSearchService:
             # Step 2: Use the extraction agent with a prompt that encourages using both
             # Google Books data AND its own knowledge
             prompt = f"""
-    Task: Extract comprehensive, accurate information about "{title}" for our book recommendation system.
+            Task: Extract comprehensive, accurate information about "{title}" for our book recommendation system.
 
-    Google Books Data:
-    """
+            Google Books Data:
+            """
 
             if google_books_data:
                 author = google_books_data.get('authors', ['Unknown'])[
@@ -96,12 +98,22 @@ class BookSearchService:
                     if year_match:
                         year = int(year_match.group(1))
 
+                # Extract rating information
+                avg_rating = None
+                ratings_count = None
+                if 'averageRating' in google_books_data:
+                    avg_rating = google_books_data['averageRating']
+                if 'ratingsCount' in google_books_data:
+                    ratings_count = google_books_data['ratingsCount']
+
                 # Add Google Books data to prompt
                 prompt += f"""
                 Title: {google_books_data.get('title', title)}
                 Author: {author}
                 Year: {year if year else "Unknown"}
                 Categories: {', '.join(google_books_data.get('categories', []))}
+                Average Rating: {avg_rating if avg_rating is not None else "Not available"} (out of 5)
+                Ratings Count: {ratings_count if ratings_count is not None else "Not available"}
                 Description: {google_books_data.get('description', 'Not available')}
                 """
             else:
@@ -109,18 +121,19 @@ class BookSearchService:
 
             prompt += f"""
             Your Task: 
-            1. For well-known books, use your own knowledge to provide accurate information about genre, themes, and mood.
+            1. For well-known books, use your own knowledge to provide accurate information about genre, themes, mood, and original publication year.
             2. For newer or obscure books, rely primarily on the Google Books data.
             3. Always create a complete Book object with all required fields.
-        
+
             For "{title}", please provide:
             - Accurate author name
             - Original publication year (not recent edition)
             - Appropriate genres from our supported list
             - 2-4 major themes present in the book
             - 1-2 predominant mood elements
-        
-            Note: If this is a well-known classic, please use your knowledge of literature to provide accurate information even if the Google Books data is incomplete.
+            - Include the average rating and ratings count if available from Google Books data
+
+            Note: If this is a well-known classic, please use your knowledge of literature to provide accurate information even if the Google Books data is incomplete. However, for rating data, always use the Google Books information if available.
             """
 
             # Use the extraction agent to create a Book object
@@ -174,6 +187,12 @@ class BookSearchService:
                         score += (2000 - year) / 100  # Earlier works get slightly higher scores
                 except (AttributeError, ValueError):
                     pass
+
+            # Prefer items with rating information
+            if 'averageRating' in info:
+                score += 15  # Has rating information
+            if 'ratingsCount' in info and info['ratingsCount'] > 10:
+                score += 10  # Has a meaningful number of ratings
 
             # Avoid derivative works (poems from books, study guides, etc.)
             subtitle = info.get('subtitle', '')

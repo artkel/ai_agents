@@ -66,6 +66,9 @@ class Book(BaseModel):
     description: Optional[str] = Field(None, description="Brief description of the book")
     themes: List[Theme] = Field(default_factory=list, description="Key themes or topics in the book")
     mood: List[Mood] = Field(default_factory=list, description="Emotional tone of the book")
+    avg_rating: Optional[float] = Field(None, description="Average user rating (0-5 scale)")
+    ratings_count: Optional[int] = Field(None, description="Number of ratings received")
+
 
 class RecommendationReason(BaseModel):
     """Explanation for why a book was recommended."""
@@ -84,7 +87,6 @@ class RecommendationResponse(BaseModel):
         description="Explanations for each recommendation"
     )
 
-
 class UserPreferences(BaseModel):
     """Model representing a user's book preferences."""
     liked_books: List[Book] = Field(default_factory=list, description="Books the user has liked")
@@ -92,6 +94,7 @@ class UserPreferences(BaseModel):
     favorite_authors: Set[str] = Field(default_factory=set, description="User's favorite authors")
     favorite_themes: Set[Theme] = Field(default_factory=set, description="Themes the user enjoys")
     favorite_moods: Set[Mood] = Field(default_factory=set, description="Moods the user enjoys")
+    min_rating_threshold: Optional[float] = Field(None, description="Minimum acceptable book rating (0-5 scale)")
 
     def update_from_book(self, book: Book):
         """Update preferences based on a new liked book."""
@@ -103,3 +106,17 @@ class UserPreferences(BaseModel):
             self.favorite_themes.add(theme)
         for mood in book.mood:
             self.favorite_moods.add(mood)
+
+        # Optionally update minimum rating threshold based on liked books
+        # This is one approach - adjust based on your recommendation strategy
+        if book.avg_rating is not None:
+            if self.min_rating_threshold is None:
+                # Initialize with the first book's rating
+                self.min_rating_threshold = max(3.0, book.avg_rating - 0.5)  # No lower than 3.0
+            else:
+                # Gradually adjust based on new books
+                # This makes the threshold the average of all liked books minus 0.5
+                rated_books = [b for b in self.liked_books if b.avg_rating is not None]
+                if rated_books:
+                    avg_of_liked = sum(b.avg_rating for b in rated_books) / len(rated_books)
+                    self.min_rating_threshold = max(3.0, avg_of_liked - 0.5)  # No lower than 3.0
