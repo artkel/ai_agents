@@ -35,6 +35,12 @@ def main():
         print(f"Themes: {', '.join(str(theme) for theme in book.themes)}")
         print(f"Mood: {', '.join(str(mood) for mood in book.mood)}")
 
+        # Display literary style information
+        if hasattr(book, 'literary_style') and book.literary_style:
+            print(f"Literary Style: {', '.join(str(style) for style in book.literary_style)}")
+        else:
+            print("Literary Style: Not available")
+
         # Display rating information
         if book.avg_rating is not None:
             print(f"Average Rating: {book.avg_rating}/5 (from {book.ratings_count or 'unknown number of'} ratings)")
@@ -69,6 +75,10 @@ def main():
             book_dict["genres"] = [str(genre) for genre in book.genres]
             book_dict["themes"] = [str(theme) for theme in book.themes]
             book_dict["mood"] = [str(mood) for mood in book.mood]
+
+            # Handle literary style serialization if it exists
+            if hasattr(book, 'literary_style') and book.literary_style:
+                book_dict["literary_style"] = [str(style) for style in book.literary_style]
 
             # Create a filename from the book title
             filename = f"{title.replace(' ', '_').lower()}_info.json"

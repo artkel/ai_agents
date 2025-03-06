@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIModel
 
-from models import Book, Genre, Theme, Mood
+from models import Book, Genre, Theme, Mood, LiteraryStyle
 
 # Load environment variables from .env file
 load_dotenv()
@@ -25,7 +25,7 @@ class BookSearchService:
 
         # Create an OpenAI model with the API key
         openai_model = OpenAIModel(
-            "gpt-4o",  # "gpt-3.5-turbo-0125",
+            "o3-mini-2025-01-31", #"gpt-4o",  # "gpt-3.5-turbo-0125", "o3-mini-2025-01-31"
             api_key=api_key
         )
 
@@ -34,9 +34,9 @@ class BookSearchService:
             model=openai_model,
             result_type=Book,
             system_prompt=(
-                "You are a book information extraction specialist. Your task is to extract structured "
-                "information about books from the provided details. Focus on determining accurate "
-                "genres, themes, emotional tone/mood, and including any provided rating data.\n\n"
+                "You are a book information extraction specialist with expertise in literary history and classification. "
+                "Your task is to extract structured information about books from the provided details. "
+                "Focus on determining accurate genres, themes, emotional tone/mood, literary style, and including any provided rating data.\n\n"
 
                 "For genres, use only these categories: science fiction, fantasy, mystery, thriller, "
                 "romance, historical, biography, non-fiction, horror, young adult, literary fiction.\n\n"
@@ -47,7 +47,14 @@ class BookSearchService:
                 "For mood, identify emotional tones like: uplifting, dark, humorous, thoughtful, "
                 "suspenseful, romantic, melancholic, inspiring.\n\n"
 
-                "Also include average rating (0-5 scale) and ratings count when available from Google Books data."
+                "For literary style, identify the dominant literary movement or tradition such as: classicism, "
+                "romanticism, realism, naturalism, modernism, symbolism, surrealism, existentialism, "
+                "postmodernism, magical realism, absurdism. "
+                "A book may embody multiple literary styles, especially complex or influential works. "
+                "For example, James Joyce's 'Ulysses' is primarily modernist but incorporates elements of realism "
+                "and symbolism. List the most prominent style first, followed by any secondary influences.\n\n"
+
+                "Include average rating (0-5 scale) and ratings count when available from Google Books data."
             )
         )
 
@@ -121,7 +128,7 @@ class BookSearchService:
 
             prompt += f"""
             Your Task: 
-            1. For well-known books, use your own knowledge to provide accurate information about genre, themes, mood, and original publication year.
+            1. For well-known books, use your own knowledge to provide accurate information about genre, themes, mood, literary style, and original publication year.
             2. For newer or obscure books, rely primarily on the Google Books data.
             3. Always create a complete Book object with all required fields.
 
@@ -131,7 +138,15 @@ class BookSearchService:
             - Appropriate genres from our supported list
             - 2-4 major themes present in the book
             - 1-2 predominant mood elements
+            - Identify the literary style(s) present in the work (e.g., modernism, realism, romanticism, naturalism ...)
             - Include the average rating and ratings count if available from Google Books data
+
+            Literary style is particularly important for our recommendation system. Consider both when the book was written and its stylistic characteristics. For example:
+            - Works from early 19th century might show romanticism
+            - Mid-19th to early 20th century might show realism or naturalism
+            - Early to mid-20th century might show modernism
+            - Late 20th century to present might show postmodernism
+            However, the period alone doesn't determine style - carefully analyze the actual approach and technique of the work.
 
             Note: If this is a well-known classic, please use your knowledge of literature to provide accurate information even if the Google Books data is incomplete. However, for rating data, always use the Google Books information if available.
             """

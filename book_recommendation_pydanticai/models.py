@@ -56,7 +56,21 @@ class Mood(str, Enum):
     MELANCHOLIC = "melancholic"
     INSPIRING = "inspiring"
 
-# define data models
+class LiteraryStyle(str, Enum):
+    """Literary movements and styles throughout history."""
+    CLASSICISM = "classicism"
+    ROMANTICISM = "romanticism"
+    REALISM = "realism"
+    NATURALISM = "naturalism"
+    MODERNISM = "modernism"
+    SYMBOLISM = "symbolism"
+    SURREALISM = "surrealism"
+    EXISTENTIALISM = "existentialism"
+    POSTMODERNISM = "postmodernism"
+    MAGICAL_REALISM = "magical realism"
+    ABSURDISM = "absurdism"
+
+
 class Book(BaseModel):
     """Model representing a book with its key attributes."""
     title: str = Field(description="Title of the book")
@@ -66,9 +80,10 @@ class Book(BaseModel):
     description: Optional[str] = Field(None, description="Brief description of the book")
     themes: List[Theme] = Field(default_factory=list, description="Key themes or topics in the book")
     mood: List[Mood] = Field(default_factory=list, description="Emotional tone of the book")
+    literary_style: Optional[List[LiteraryStyle]] = Field(default_factory=list,
+                                              description="Literary movement or style (e.g., Realism, Modernism)")
     avg_rating: Optional[float] = Field(None, description="Average user rating (0-5 scale)")
     ratings_count: Optional[int] = Field(None, description="Number of ratings received")
-
 
 class RecommendationReason(BaseModel):
     """Explanation for why a book was recommended."""
@@ -94,6 +109,8 @@ class UserPreferences(BaseModel):
     favorite_authors: Set[str] = Field(default_factory=set, description="User's favorite authors")
     favorite_themes: Set[Theme] = Field(default_factory=set, description="Themes the user enjoys")
     favorite_moods: Set[Mood] = Field(default_factory=set, description="Moods the user enjoys")
+    favorite_literary_styles: Set[LiteraryStyle] = Field(default_factory=set,
+                                                         description="Literary styles the user enjoys")
     min_rating_threshold: Optional[float] = Field(None, description="Minimum acceptable book rating (0-5 scale)")
 
     def update_from_book(self, book: Book):
@@ -106,6 +123,11 @@ class UserPreferences(BaseModel):
             self.favorite_themes.add(theme)
         for mood in book.mood:
             self.favorite_moods.add(mood)
+
+        # Add this new section to process literary styles
+        if hasattr(book, 'literary_style') and book.literary_style:
+            for style in book.literary_style:
+                self.favorite_literary_styles.add(style)
 
         # Optionally update minimum rating threshold based on liked books
         # This is one approach - adjust based on your recommendation strategy
