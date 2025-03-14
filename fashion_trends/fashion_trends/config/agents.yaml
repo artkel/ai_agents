@@ -26,7 +26,7 @@ crawler_agent:
     product gallery images intended for shopping (which you avoid). Your expertise allows you
     to extract comprehensive trend descriptions while identifying the exact images that best
     represent each trend visually.
-  llm: openai/gpt-4
+  llm: openai/gpt-4o-mini-2024-07-18
 
 report_agent:
   role: >
@@ -38,4 +38,4 @@ report_agent:
     reports. Your talent lies in organizing information in a clear, professional format that
     highlights the most important details of each trend. You know how to present fashion trends
     in a way that is both informative and visually appealing.
-  llm: openai/gpt-4
+  llm: openai/gpt-4o-mini-2024-07-18
