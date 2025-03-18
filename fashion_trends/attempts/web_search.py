@@ -1,37 +1,39 @@
 # Warning control
-import warnings
+import warnings, os, json, sqlite3, datetime
 warnings.filterwarnings('ignore')
-import os, yaml
-import re
-from dotenv import load_dotenv
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from crewai.tools import BaseTool
 from crewai import Agent, Task, Crew
+from crewai.tools import BaseTool
 from crewai_tools import SerperDevTool, ScrapeWebsiteTool
-import sqlite3
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
 load_dotenv()
-# Set up API keys
-SERPER_API_KEY = os.getenv("SERPER_API_KEY")
+
+# Access the API keys from environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+SERPER_API_KEY = os.getenv("SERPER_API_KEY")
+
+# Set them explicitly in os.environ to ensure they're available to the libraries
+os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+os.environ["SERPER_API_KEY"] = SERPER_API_KEY
+
+# Check if keys were loaded properly
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY not found in .env file")
+if not SERPER_API_KEY:
+    raise ValueError("SERPER_API_KEY not found in .env file")
 
 # Define Pydantic models for structured output
 class FashionTrend(BaseModel):
     trend_name: str = Field(description="The exact name of the fashion trend as mentioned in the article")
     source_url: str = Field(description="URL of the article where the trend was found")
-   # context: str = Field(description="The sentence or paragraph where the trend is mentioned")
 
 class FashionTrends(BaseModel):
     trends: List[FashionTrend] = Field(description="List of three verified fashion trends from different sources")
 
-class TrendDatabaseInput(BaseModel):
-    """Input schema for TrendDatabaseTool."""
-    action: str = Field(..., description="Action to perform: 'check', 'add', or 'list'")
-    trend_name: Optional[str] = Field(None, description="Name of the trend to check or add")
-    source_url: Optional[str] = Field(None, description="URL source for the trend")
-
-# set up database
+# Database functions remain the same
 def setup_database():
     """Create the trends table if it doesn't exist."""
     conn = sqlite3.connect('fashion_trends.db')
@@ -50,7 +52,7 @@ def setup_database():
     conn.commit()
     conn.close()
 
-#create db functions
+
 def trend_exists(trend_name):
     """Check if a trend already exists in the database."""
     conn = sqlite3.connect('fashion_trends.db')
@@ -62,6 +64,8 @@ def trend_exists(trend_name):
 
     conn.close()
     return result
+
+
 def add_trend(trend_name, source_url):
     """Add a new trend to the database."""
     import datetime
@@ -83,6 +87,8 @@ def add_trend(trend_name, source_url):
         conn.close()
 
     return success
+
+
 def get_all_trends():
     """Retrieve all trends from the database."""
     conn = sqlite3.connect('fashion_trends.db')
@@ -94,7 +100,83 @@ def get_all_trends():
 
     conn.close()
     return trends
-# ... and db tool
+
+
+def get_used_urls():
+    """Retrieve all source URLs from the database."""
+    conn = sqlite3.connect('fashion_trends.db')
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT source_url FROM trends')
+    urls = [row[0] for row in cursor.fetchall()]
+
+    conn.close()
+    return urls
+
+
+# Simplified BlocklistTool that reads from config/blocked_urls.json
+class BlocklistInput(BaseModel):
+    """Input schema for BlocklistTool."""
+    action: str = Field(..., description="Action to perform: 'check' or 'list'")
+    url: Optional[str] = Field(None, description="URL to check against the blocklist")
+
+# TrendDatabaseTool definition
+class TrendDatabaseInput(BaseModel):
+    """Input schema for TrendDatabaseTool."""
+    action: str = Field(..., description="Action to perform: 'check', 'add', or 'list'")
+    trend_name: Optional[str] = Field(None, description="Name of the trend to check or add")
+    source_url: Optional[str] = Field(None, description="URL source for the trend")
+
+# create tools
+class BlocklistTool(BaseTool):
+    name: str = "URL Blocklist Tool"
+    description: str = """
+    Tool to check if a URL is on the blocklist.
+    Use it to:
+    - Check if a URL is blocked ('check' action)
+    - List all blocked URLs ('list' action)
+    """
+    args_schema: type[BaseModel] = BlocklistInput
+
+    def _get_blocked_urls(self):
+        """Read the blocked URLs from the JSON file."""
+        blocklist_path = 'config/blocked_urls.json'
+        try:
+            if os.path.exists(blocklist_path):
+                with open(blocklist_path, 'r') as f:
+                    return json.load(f)
+            return []
+        except json.JSONDecodeError:
+            # Handle case where file exists but is empty or malformed
+            return []
+
+    def _run(self, action: str, url: Optional[str] = None) -> str:
+        """Execute the tool based on the action."""
+        blocked_urls = self._get_blocked_urls()
+
+        if action == 'check':
+            if not url:
+                return "Error: url is required for 'check' action"
+
+            # Check if the URL or any part of it is in the blocklist
+            for blocked_url in blocked_urls:
+                if blocked_url in url:
+                    return f"The URL '{url}' is blocked because it contains '{blocked_url}'."
+
+            return f"The URL '{url}' is not blocked."
+
+        elif action == 'list':
+            if not blocked_urls:
+                return "No URLs are currently blocked."
+
+            result = "Currently blocked URLs:\n"
+            for i, blocked_url in enumerate(blocked_urls, 1):
+                result += f"{i}. {blocked_url}\n"
+            return result
+
+        else:
+            return f"Error: Unknown action '{action}'. Use 'check' or 'list'."
+
 class TrendDatabaseTool(BaseTool):
     name: str = "Trend Database Tool"
     description: str = """
@@ -143,10 +225,12 @@ class TrendDatabaseTool(BaseTool):
         else:
             return f"Error: Unknown action '{action}'. Use 'check', 'add', or 'list'."
 
+
 # Initialize the tools
-search_tool = SerperDevTool(n_results=20)  # Increased results as mentioned
-scrape_tool = ScrapeWebsiteTool(text_content=True)  # Only get text content to reduce tokensv
+search_tool = SerperDevTool(n_results=20)
+scrape_tool = ScrapeWebsiteTool(text_content=True)
 db_tool = TrendDatabaseTool()
+blocklist_tool = BlocklistTool()
 
 # Create a fashion researcher agent with all tools
 fashion_researcher = Agent(
@@ -155,39 +239,42 @@ fashion_researcher = Agent(
     backstory="""You are an expert fashion researcher who stays on top of upcoming trends. 
     Your specialty is identifying emerging women's fashion trends from reliable sources.
     You are also meticulous about verifying information and ensuring you don't duplicate trends.""",
-    tools=[search_tool, scrape_tool, db_tool],
+    tools=[search_tool, scrape_tool, db_tool, blocklist_tool],
     verbose=True,
     llm="openai/gpt-4o-mini-2024-07-18"
 )
 
-# Create an enhanced search and verification task with database checks
+# Create an enhanced search and verification task with database checks and blocklist
 fashion_task = Task(
     description="""
     Your task is to find new, verified women's fashion trends for 2025 that aren't already in our database:
 
     1. First, use the database tool with 'list' action to see what trends we already know about
 
-    2. Then, search for these exact keywords to find potential new trends:
+    2. Check the blocklist using the 'list' action to see what URLs are prohibited
+
+    3. Then, search for these exact keywords to find potential new trends:
        - "Women fashion trends 2025"
        - "Women's clothing trends 2025"
        - "New women's style 2025"
 
-    3. For each potential trend you find:
-       - Check if it already exists in our database using the 'check' action
+    4. For each potential trend you find:
+       - Check if its source URL is on the blocklist using the 'check' action
+       - If the URL is blocked, reject it immediately and continue searching
+       - Check if the trend already exists in our database using the 'check' action
        - If it does exist, skip it and look for another trend
-       - If it's new, use the scraping tool to verify that the trend actually appears in the article
+       - Use the scraping tool to verify that the trend actually appears in the article
        - If verified, add it to your findings
 
-    4. Once you verify a trend that's not in our database, use the 'add' action to add it
+    5. Once you verify a trend that's not in our database, use the 'add' action to add it
 
-    5. Continue until you have found THREE different new verified trends
+    6. Continue until you have found THREE different new verified fashion trends
 
-    Your final output should be exactly three new verified fashion trends in the required format.
-
-    IMPORTANT VERIFICATION RULES:
+    CRITICAL REQUIREMENTS:
+    - You MUST check each URL against the blocklist before accepting it
+    - NEVER use a URL that appears on the blocklist
+    - Try to use different URLs for the three trends when possible
     - A trend is only considered verified if the exact trend name appears in the article content
-    - IMPORTANT: Each trend must come from a different source (different URLs)
-    - Avoid awellstyledlife web source. FDo not pick up trends from this website.
     - You must prioritize trends that are explicitly mentioned as 2025 trends
     - The trend must NOT already exist in our database (case-insensitive check)
     """,
@@ -198,6 +285,7 @@ fashion_task = Task(
 
 # Ensure database is set up
 setup_database()
+
 
 # Create and run the crew
 crew = Crew(
@@ -226,3 +314,18 @@ for i, trend in enumerate(all_trends, 1):
     print(f"{i}. {trend['trend_name']}")
     print(f"   Source: {trend['source_url']}")
     print(f"   Discovered: {trend['discovered_date']}\n")
+
+# Display all blocked URLs
+print("\n===== BLOCKED URLS =====\n")
+blocklist_path = 'config/blocked_urls.json'
+try:
+    with open(blocklist_path, 'r') as f:
+        blocked_urls = json.load(f)
+
+    if not blocked_urls:
+        print("No URLs are currently blocked.")
+    else:
+        for i, url in enumerate(blocked_urls, 1):
+            print(f"{i}. {url}")
+except (FileNotFoundError, json.JSONDecodeError):
+    print("No blocked URLs file found or file is invalid.")
