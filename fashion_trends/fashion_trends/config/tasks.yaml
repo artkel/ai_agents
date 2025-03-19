@@ -1,35 +1,38 @@
 search_task:
   description: >
-    Search the web for the latest women's fashion trends for 2025. Find exactly 3 distinct trends
-    from different web sources. For each trend, provide:
-    1. The EXACT name or title of the trend as written in the article - do not modify, paraphrase
-       or rename the trend in any way
-    2. Short description of this trend
-    3. The complete URL of an article that discusses this trend in detail
-    
-    Important instructions for search:
-    - Use broad search queries to discover trends, such as:
-      * "Women fashion trends 2025"
-      * "Female style forecast 2025"
-      * "Latest women's fashion 2025"
-      * "Women's clothing trends 2025"
-      * "New women's style 2025"
-    - DO NOT include specific website names in your search queries like Vogue, Elle, HarperBazar, Glamour, etc.
-    - DO NOT include trend names in your search queries (since you're trying to discover them)
-    - Search for trends on differen web sources, do not use the same web site to find all three trends there
-    - Only AFTER finding articles with trend forecasts should you identify specific trend names
-    
-    Focus on fashion websites like Elle, Harper's Bazaar, Glamour, Vogue, WhoWhatWear or trend forecasting
-    sites (avoid InStyle). Make sure the articles are about 2025 trends specifically, not older trends.
-    
-    Important: Copy the trend names EXACTLY as they appear in the article headings/titles. Do not
-    create your own trend names or modify them.
-    
-    Format your output as a list with the trend name and URL for each trend.
+    Your task is to find new, verified women's fashion trends for 2025 that aren't already in our database:
+
+      1. First, use the database tool with 'list' action to see what trends we already know about
+
+      2. Check the blocklist using the 'list' action to see what URLs are prohibited
+
+      3. Then, search for these exact keywords to find potential new trends:
+         - "Women fashion trends 2025"
+         - "Women's clothing trends 2025"
+         - "New women's style 2025"
+
+      4. For each potential trend you find:
+         - Check if its source URL is on the blocklist using the 'check' action
+         - If the URL is blocked, reject it immediately and continue searching
+         - Check if the trend already exists in our database using the 'check' action
+         - If it does exist, skip it and look for another trend
+         - Use the scraping tool to verify that the trend actually appears in the article
+         - If verified, add it to your findings
+
+      5. Once you verify a trend that's not in our database, use the 'add' action to add it
+
+      6. Continue until you have found THREE different new verified fashion trends
+
+      CRITICAL REQUIREMENTS:
+      - You MUST check each URL against the blocklist before accepting it
+      - NEVER use a URL that appears on the blocklist
+      - Try to use different URLs for the three trends when possible
+      - A trend is only considered verified if the exact trend name appears in the article content
+      - You must prioritize trends that are explicitly mentioned as 2025 trends
+      - The trend must NOT already exist in our database (case-insensitive check)
   expected_output: >
-    A list of 3 women's fashion trends for 2025, each with the EXACT trend name as it appears 
-    in the source article, short description for each trend, and the complete URL to an article discussing that trend.
-  agent: search_agent
+    A JSON object with three new verified fashion trends, each containing the trend name and source URL
+  agent: fashion_researcher
 
 crawl_task:
   description: >

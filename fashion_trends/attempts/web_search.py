@@ -264,7 +264,7 @@ fashion_task = Task(
        - Check if the trend already exists in our database using the 'check' action
        - If it does exist, skip it and look for another trend
        - Use the scraping tool to verify that the trend actually appears in the article
-       - If verified, add it to your findings
+       - If verified, add it with exact same name to your findings
 
     5. Once you verify a trend that's not in our database, use the 'add' action to add it
 
