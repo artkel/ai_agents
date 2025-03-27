@@ -1,18 +1,16 @@
-# To-DO
+## Challenges
 
-we have a problem with crawl agent: she gets too much content for crawling, 
-i.e. 1) high token consumption, 2) some models (gpt4) cannot digest the volume
-I need to find out how to filter website content down before exposure (e.g. article title + 1000 characters after)
+* The main challenge right now is our search agent
+* He adds unnecesary words in search queries no matter how I adjust the task instructions
+* He often finds URLs where articles about trends are posted, or low quality articles
+* Expand search list (now 10 results, should be at least 20)
+* Make agent pick up different websites (URL versatility), also from lower part of the search results list
+* Make agent to select search queries from a given list randomly
+* Cost monitoring ```(specific_model_mln_tokens_price * (crew.usage_metrics_prompt_tokens + crew.usage_metrics.completion_tokens)```)
 
-## Possible solutions:
-
-1. try `css_extraction_map` by *Spider API*:
-    json_data = {"limit":5,"return_format":"markdown","css_extraction_map":{"/blog":[{"name":"headers","selectors":["h1","h2","h3"]},{"name":"news","selectors":["article"]}]},"url":"https://spider.cloud"}
-
-2. try [tavily extract](https://docs.tavily.com/documentation/api-reference/endpoint/extract) instead of *Spider*
-particularily `"include_images": True` and `"extract_depth": Basic`
-3. In Spider API try `filter_output_main_only: True`. Filter the nav, aside, and footer from the output.
-
-@tru 
-@solazola
-@kait 
+## Possible solution
+* Add manager, who will be validating search agent output (see CrewAI course on DeepLearning platform)
+* (what queries he used, what urls he provided)
+* Develop a Flow
+* Add human in the loop (check URL list before passing it to the next agent)
+* Adjust instructions for the search agent, so that he only uses provided queries

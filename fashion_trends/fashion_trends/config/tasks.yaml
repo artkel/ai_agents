@@ -1,81 +1,84 @@
-# tasks.yaml - UPDATED
 search_task:
   description: >
-    Find 2 distinct women's fashion trends for 2025 from DIFFERENT fashion websites.
-    
-    ONLY include for each trend:
-    1. The EXACT trend name as it appears in the article
-    2. The source URL
-    3. The publication name (e.g., Harper's Bazaar)
-    
-    Focus on fashion websites like Elle, Harper's Bazaar, Glamour, InStyle (avoid Vogue).
-    Use search terms like "women fashion trends 2025" or "spring 2025 runway trends".
-    
-    Be extremely concise. No explanations or additional text.
-  expected_output: >
-    A simple list of 2 trend names with their sources, each from a different publication.
-  agent: search_agent
+    Your task is to find new, verified women's fashion trends for 2025 that aren't already in our database:
 
-# In tasks.yaml
+      1. First, use the database tool with 'list' action to see what trends we already know about
+
+      2. Check the blocklist using the 'list' action to see what URLs are prohibited
+
+      3. Then, search for these exact keywords to find potential new trends:
+         - "Women fashion trends 2025"
+         - "Women's clothing trends 2025"
+         - "New women's style 2025"
+
+      4. For each potential trend you find:
+         - Check if its source URL is on the blocklist using the 'check' action
+         - If the URL is blocked, reject it immediately and continue searching
+         - Check if the trend already exists in our database using the 'check' action
+         - If it does exist, skip it and look for another trend
+         - Use the scraping tool to verify that the trend actually appears in the article
+         - If verified, add it to your findings
+
+      5. Once you verify a trend that's not in our database, use the 'add' action to add it
+
+      6. Continue until you have found THREE different new verified fashion trends
+
+      CRITICAL REQUIREMENTS:
+      - You MUST check each URL against the blocklist before accepting it
+      - NEVER use a URL that appears on the blocklist
+      - Try to use different URLs for the three trends when possible
+      - A trend is only considered verified if the exact trend name appears in the article content
+      - You must prioritize trends that are explicitly mentioned as 2025 trends
+      - The trend must NOT already exist in our database (case-insensitive check)
+  expected_output: >
+    A JSON object with three new verified fashion trends, each containing the trend name and source URL
+  agent: fashion_researcher
+
 crawl_task:
   description: >
-    For each trend URL provided by the search agent, use the Spider Crawler tool to extract
-    detailed information about the trend. When using the tool, provide both the URL and the
-    EXACT trend name to extract only the relevant section of the article.
-    
-    For each trend, collect and provide:
-    
-    1. The original article URL
-    2. The EXACT same trend name provided by the search agent - do not modify it
-    3. A detailed 4-7 sentence description of the trend, covering key characteristics, materials, colors, and styling
-    4. Images: For each trend, find the FIRST image that appears immediately after or near the trend heading/title. 
-       These are usually editorial/runway images showing models wearing the trend (not product images for shopping).
-       Specifically:
-       - Look for images that appear BEFORE the detailed text description of the trend
-       - Prioritize images showing full outfits on models/people rather than individual items
-       - Avoid shopping/product gallery images that appear later in the article
-    5. A detailed description of what the image shows, including the outfit components and styling
-    
-    IMPORTANT: When using the Spider Crawler tool, you MUST provide both the URL and the exact trend name 
-    as separate parameters so that only the relevant section of the article is extracted, like:
-    SpiderCrawlerTool(url="https://example.com/article", trend_name="Exactly As Found Trend Name")
-    
-    Make sure all information is accurate and properly formatted. Use a JSON structure
-        to organize the information. The format should be:
+    Analyze the fashion trend information from the URL: "{url}" for the trend "{trend_name}".
+    DO NOT modify the URL - use exactly the URL provided.
 
-        {
-          "trends": [
-            {
-              "name": "Exact Trend Name",
-              "url": "https://example.com/article",
-              "description": "Detailed trend description...",
-              "image_url": "https://example.com/image.jpg",
-              "image_description": "Detailed description of the image..."
-            },
-            {
-              ...second trend...
-            }
-          ]
-        }
+    From the extracted content, provide the following:
+    1. The EXACT trend title as it appears in the article
+    2. The description of the trend, formatted nicely but using the EXACT text from the article
+    3. Select the most relevant image URL that shows people/models wearing the trend (avoid product-only images)
+    4. Include the source URL of the article
+
+    For the image selection:
+    - Important: Different fashion sites place images in different locations:
+      * For nashvillelifestyles, always choose the image that appears before the trend title
+      * For Vogue, always choose .png images when available
+      * For other sites, examine all available images
+    - Pay attention to any text that follows the IMAGE URL in the extracted content - this often contains descriptions
+      like "From left: Brand X, Brand Y, Brand Z" or "Runway: Designer Spring 2025" which indicates runway/model images
+    - Show real people or models wearing the trend (not product-only images)
+    - Prioritize images that show fashion runway models or editorial photoshoots
+
+    IMPORTANT: Format your response as a JSON object with the following structure:
+    {
+      "trend_title": "The exact trend title from the article",
+      "description": "The formatted description text from the article",
+      "image_url": "The URL of the selected image",
+      "source_url": "The URL of the source article"
+    }
   expected_output: >
     A JSON object containing detailed information for each trend, including the exact trend name,
-    detailed description, the main editorial image URL for each trend, image descriptions, and source URL.
+    detailed description, the main editorial image URL for each trend, and source URL.
   agent: crawler_agent
   context:
     - search_task
 
 report_task:
   description: >
-    Create a comprehensive fashion trend report based on the information provided.
+    Create a comprehensive fashion trend report based on the information provided in clear Russian language.
     The report should include:
     
     1. A brief introduction about fashion trends for 2025
     2. For each trend:
-       - A clear title/heading
-       - The detailed description in friendly clear tone
-       - Key trend characteristics
+       - A clear title/heading (do not translate it, use the original one)
+       - The detailed description
        - The image URL(s)
-       - A caption for each image
        - The source attribution (link to the original article)
     3. A brief conclusion
     
@@ -84,7 +87,7 @@ report_task:
     The report should be ready to be sent via email to a fashion stylist.
   expected_output: >
     A complete Markdown-formatted report on women's fashion trends for 2025,
-    including all trend information, images, and proper formatting.
+    including all trend information, images, and proper formatting in clear Russian language.
   agent: report_agent
   context:
     - crawl_task
