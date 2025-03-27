@@ -1,0 +1,91 @@
+# tasks.yaml - UPDATED
+search_task:
+  description: >
+    Find 2 distinct women's fashion trends for 2025 from DIFFERENT fashion websites.
+    
+    ONLY include for each trend:
+    1. The EXACT trend name as it appears in the article
+    2. The source URL
+    3. The publication name (e.g., Harper's Bazaar)
+    
+    Focus on fashion websites like Elle, Harper's Bazaar, Glamour, InStyle (avoid Vogue).
+    Use search terms like "women fashion trends 2025" or "spring 2025 runway trends".
+    
+    Be extremely concise. No explanations or additional text.
+  expected_output: >
+    A simple list of 2 trend names with their sources, each from a different publication.
+  agent: search_agent
+
+# In tasks.yaml
+crawl_task:
+  description: >
+    For each trend URL provided by the search agent, use the Spider Crawler tool to extract
+    detailed information about the trend. When using the tool, provide both the URL and the
+    EXACT trend name to extract only the relevant section of the article.
+    
+    For each trend, collect and provide:
+    
+    1. The original article URL
+    2. The EXACT same trend name provided by the search agent - do not modify it
+    3. A detailed 4-7 sentence description of the trend, covering key characteristics, materials, colors, and styling
+    4. Images: For each trend, find the FIRST image that appears immediately after or near the trend heading/title. 
+       These are usually editorial/runway images showing models wearing the trend (not product images for shopping).
+       Specifically:
+       - Look for images that appear BEFORE the detailed text description of the trend
+       - Prioritize images showing full outfits on models/people rather than individual items
+       - Avoid shopping/product gallery images that appear later in the article
+    5. A detailed description of what the image shows, including the outfit components and styling
+    
+    IMPORTANT: When using the Spider Crawler tool, you MUST provide both the URL and the exact trend name 
+    as separate parameters so that only the relevant section of the article is extracted, like:
+    SpiderCrawlerTool(url="https://example.com/article", trend_name="Exactly As Found Trend Name")
+    
+    Make sure all information is accurate and properly formatted. Use a JSON structure
+        to organize the information. The format should be:
+
+        {
+          "trends": [
+            {
+              "name": "Exact Trend Name",
+              "url": "https://example.com/article",
+              "description": "Detailed trend description...",
+              "image_url": "https://example.com/image.jpg",
+              "image_description": "Detailed description of the image..."
+            },
+            {
+              ...second trend...
+            }
+          ]
+        }
+  expected_output: >
+    A JSON object containing detailed information for each trend, including the exact trend name,
+    detailed description, the main editorial image URL for each trend, image descriptions, and source URL.
+  agent: crawler_agent
+  context:
+    - search_task
+
+report_task:
+  description: >
+    Create a comprehensive fashion trend report based on the information provided.
+    The report should include:
+    
+    1. A brief introduction about fashion trends for 2025
+    2. For each trend:
+       - A clear title/heading
+       - The detailed description in friendly clear tone
+       - Key trend characteristics
+       - The image URL(s)
+       - A caption for each image
+       - The source attribution (link to the original article)
+    3. A brief conclusion
+    
+    Format the report in a clean, professional style using Markdown. Make sure all
+    images are properly referenced so they can be displayed in the final report.
+    The report should be ready to be sent via email to a fashion stylist.
+  expected_output: >
+    A complete Markdown-formatted report on women's fashion trends for 2025,
+    including all trend information, images, and proper formatting.
+  agent: report_agent
+  context:
+    - crawl_task
+  output_file: fashion_trends_2025.md
